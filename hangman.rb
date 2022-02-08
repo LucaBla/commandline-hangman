@@ -1,5 +1,7 @@
 class Game
-  attr_reader :word
+  require 'json'
+
+  attr_accessor :word, :hint, :incorrect_letters, :trys, :hangman
 
   def initialize
     @dictionary = load_dictionary
@@ -8,6 +10,25 @@ class Game
     @incorrect_letters = []
     @trys = 7
     @hangman = Array.new(8) { Array.new(6) { ' ' } }
+  end
+
+  def to_json
+    JSON.dump({
+      word: @word,
+      hint: @hint,
+      incorrect_letters: @incorrect_letters,
+      trys: @trys,
+      hangman: @hangman
+    })
+  end
+
+  def from_json(string)
+    data = JSON.parse string
+    @word = data['word']
+    @hint = data['hint']
+    @incorrect_letters = data['incorrect_letters']
+    @trys = data['trys']
+    @hangman = data['hangman']
   end
 
   def load_dictionary
@@ -20,6 +41,7 @@ class Game
   end
 
   def play_game
+    ask_to_load
     until @trys.zero? || gameover?
       print_ui
       guess = receive_guess
@@ -50,9 +72,12 @@ class Game
   def receive_guess
     input = ''
     until input.length == 1
+      puts "Pls guess a letter.(Single Char)\n(input save to save your game)\n\n"
       input = gets.chomp.downcase
-      save_game if input == 'save'
-      puts "Pls guess a letter.(Single Char)\n\n"
+      if input == 'save'
+        save_game
+        input = receive_guess
+      end
     end
     puts "---------------------------------\n\n"
     input
@@ -117,7 +142,66 @@ class Game
     puts
   end
 
-  def  save_game
+  def set_filename
+    puts "\n\npls enter the filename."
+    filename = gets.chomp
+    if Dir.entries('./savefiles').include?(filename)
+      puts "Do you want to override #{filename}?(y/n)"
+      input = gets.chomp
+      if input == 'y'
+        filename.gsub(/[\x00\/\\:\*\?\"<>\|]/, '_')
+      elsif input == 'n'
+        set_filename
+      else
+        while input != 'n' || input != 'y'
+          puts "Do you want to override #{filename}?(y/n)"
+          input = gets.chomp
+        end
+      end
+    end
+    puts "---------------------------------\n\n"
+    filename
+  end
+
+  def save_game
+    puts "---------------------------------\n\n"
+    puts "These are the already existing savefiles.\n\n"
+    puts Dir.entries('./savefiles')
+    filename = set_filename
+    File.open("./savefiles/#{filename}", 'w') do |f|
+      f.write(to_json)
+      f.write('')
+    end
+    print_ui
+  end
+
+  def ask_to_load
+    puts 'Do you want to load a game?(y/n)'
+    input = gets.chomp
+    if input == 'y'
+      load_game
+    elsif input == 'n'
+      return
+    else
+      puts 'only enter y or n!'
+      ask_to_load
+    end
+  end
+
+  def load_game
+    puts "---------------------------------\n\n"
+    puts "Which file do you want to load?\n\n"
+    puts Dir.entries('./savefiles')
+    input = gets.chomp
+    begin
+      file = File.open("./savefiles/#{input}", 'r')
+      content = file.read
+      from_json(content)
+    rescue Errno::ENOENT
+      puts 'Only enter existing saves!'
+      load_game
+    end
+    puts "---------------------------------\n\n"
   end
 end
 
