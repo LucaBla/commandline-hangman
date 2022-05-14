@@ -55,6 +55,7 @@ class Game
   end
 
   def end_game
+    system('clear')
     if @trys.zero?
       print_hangman
       puts "Oh no you Lost! The Word was #{@word.join}\n\n"
@@ -63,7 +64,8 @@ class Game
   end
 
   def print_ui
-    puts "Trys = #{@trys} \n\n"
+    system('clear')
+    puts "Left trys = #{@trys} \n\n"
     puts "Incorrect letters = #{@incorrect_letters} \n\n"
     print_hangman
     puts "#{@hint.join} \n\n"
@@ -160,6 +162,7 @@ class Game
       end
     end
     puts "---------------------------------\n\n"
+    system('clear')
     filename
   end
 
@@ -172,6 +175,7 @@ class Game
       f.write(to_json)
       f.write('')
     end
+    system('clear')
     print_ui
   end
 
@@ -181,11 +185,13 @@ class Game
     if input == 'y'
       load_game
     elsif input == 'n'
+      system('clear')
       return
     else
       puts 'only enter y or n!'
       ask_to_load
     end
+    system('clear')
   end
 
   def load_game
